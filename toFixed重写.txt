@@ -1,0 +1,64 @@
+/*保留小数（四舍五入）data:要保留的数，val:保留的位数*/
+        function ToFixed(data,val){
+            var numbers = '';
+            // 保留几位小数后面添加几个0
+            for (var i = 0; i < val; i++) {
+                numbers += '0';
+            }
+            var s = 1 + numbers;
+            // 如果是整数需要添加后面的0
+            var spot = "." + numbers;
+            // Math.round四舍五入
+            //  parseFloat() 函数可解析一个字符串，并返回一个浮点数。
+            var value = Math.round(parseFloat(data) * s) / s;
+            // 从小数点后面进行分割
+            var d = value.toString().split(".");
+            if (d.length == 1) {
+                value = value.toString() + spot;
+                return value;
+            }
+            if (d.length > 1) {
+                if (d[1].length < 2) {
+                    value = value.toString() + "0";
+                }
+                return value;
+            }
+        }
+        ToFixed(2.335,2) //2.34 完美
+-------------------------------------------------------------------------
+Number.prototype.toFixed = function (s) {
+ 
+    var that = this, changenum, index;
+ 
+    // 负数
+    if (this < 0) {
+        that = -that;
+    }
+ 
+    changenum = (parseInt(that * Math.pow(10, s) + 0.5) / Math.pow(10, s)).toString();
+ 
+    index = changenum.indexOf(".");
+ 
+    if (index < 0 && s > 0) {
+ 
+        changenum = changenum + ".";
+ 
+        for (var i = 0; i < s; i++) {
+            changenum = changenum + "0";
+        }
+ 
+    } else {
+ 
+        index = changenum.length - index;
+ 
+        for (var i = 0; i < (s - index) + 1; i++) {
+            changenum = changenum + "0";
+        }
+    }
+ 
+    if (this < 0) {
+        return -changenum;
+    } else {
+        return changenum;
+    }
+}

@@ -1,0 +1,97 @@
+@{
+    Layout = null;
+}
+ 
+<!DOCTYPE html>
+ 
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index18</title>
+</head>
+<body>
+    <div>
+        <a href="/Login/Index">跳转到Login控制器下的Index视图</a><br /> 
+ 
+        <a href="@Url.Action("index")">跳转到相同控制器下的Index视图</a><br />  <!--凡是以@Url.Action（）来生成的url的都是按照路由规则来自动生成的。-->
+ 
+        <a href="@Url.Action("index","login")">跳转到Login控制器下的Index视图</a><br />
+ 
+        <a href="@Url.Action("Index", "Home", new{id=100 })">跳转转到Home控制器下的Index视图，并传递一个id参数</a>
+ 
+        <a href="@Url.RouteUrl("default",new {controller="Home",action="Index",id=1})">跳转到路由规则名字为default的这条路由下面的Home控制器下的Index方法，并传递一个id参数（当然参数可以不写）</a>
+ 
+        @Url.
+        <!--attributes是属性的意思;routeValues是超链接后面要传递的值-->
+        <!--跳转到相同控制器下的Index视图-->
+        @Html.ActionLink("跳转到相同控制器下的Index视图", "Index")" <br />
+ 
+        @Html.ActionLink("跳转到Login控制器下的Index视图", "Index", "Login") <br />
+ 
+        <!--示例：http://www.baidu.com?UserName=Fanbin-->
+        @Html.ActionLink("跳转到相同控制器下的Index视图,给这个超链接传一个UserName值，这个UserName值为‘Fanbin’", "Index", new { UserName = "Fanbin" }) <br />
+ 
+ 
+        <!--new{name="abc"}的意思是创建一个匿名类的对象，给他的name属性赋值abc-->
+        @Html.ActionLink("跳转到Login控制器下的Index视图,给这个超链接添加一个name属性，并赋值为abc", "Index", "Login", new { name = "abc" }) <br />
+ 
+ 
+        @Html.ActionLink("跳转到Login控制器下的Index视图,给这个超链接传一个UserName值，这个UserName值为‘Fanbin’;同时给这个超链接添加一个name属性，并赋值为   abc,", "Index", "Login", new { UserName = "Fanbin" }, new { name = "abc" })<br />
+ 
+ 
+ 
+ 
+ 
+        @{
+          <!--编码---------解码-->
+ 
+            var urlEncodeStr = Url.Encode("http://www.baidu.com?name=张三");  //对url进行编码
+            @urlEncodeStr;  <br /> //表示输出urlEncodeStr这个变量，这里输出：http%3a%2f%2fwww.baidu.com%3fname%3d%e5%bc%a0%e4%b8%89
+ 
+            var urlDecodeStr = Server.UrlDecode(urlEncodeStr); //对urlEncodeStr这个变量进行url解码
+            @urlDecodeStr;<br />  //这里输出： http://www.baidu.com?name=张三
+ 
+ 
+ 
+            <!--检查url请求是否来自本地-->
+            
+            //IsLocalUrl()是判断当前的虚拟路径是否为本地路径，如果加了主机头就永远为false （一般我们不用它）
+        
+            @Url.IsLocalUrl("/Home/Index18"); //输出:ture
+             
+            @Url.IsLocalUrl("http://localhost:11503/Home/Index18")  //输出：false  （因为前面加了主机头）                          
+                                             
+ 
+            //判断当前url请求是否来本地（我们一般都用它）
+            @Request.IsLocal  //当在浏览器中输入：http://localhost:11503/Home/Index18 那么它的值就是True，当在浏览器以域名的形式来访问，例如http://www.baidu.com/Home/Index18那么它的值就是false
+            
+ 
+ 
+        }
+ 
+ 
+ 
+        <!----------------------------------------------------------------------------------------------------->
+        <!--创建一个TextBox,并给他的id,和name属性同时赋值UserName-->
+        @Html.TextBox("UserName")
+ 
+        <!--创建一个TextBox,并给他的id,和name属性同时赋值UserName，同时将他的value值设为“你好”-->
+        @Html.TextBox("UserName", "你好")
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+ 
+    //if (window.XMLHttpRequest)表示当前浏览器支持XMLHttpRequest对象
+    if (window.XMLHttpRequest) {
+        var xmlhttp = new XMLHttpRequest();
+    }
+    else {
+        var xmlhttp = new ActiveXObject();
+    }
+ 
+ 
+    //如果是Get请求，就需要设置浏览器为永远不缓存ajax返回的数据结果。
+    xmlhttp.setRequestHeader("If-Modified-Since", "0");
+ 
+</script>

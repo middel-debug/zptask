@@ -1,0 +1,248 @@
+1.方法一：采用OleDB读取EXCEL文件：
+  把EXCEL文件当做一个数据源来进行数据的读取操作，实例如下：
+public DataSet ExcelToDS(string Path) 
+{ 
+ string strConn = "Provider=Microsoft.Jet.OLEDB.4.0;" +"Data Source="+ Path +";"+"Extended Properties=Excel 8.0;"; 
+ OleDbConnection conn = new OleDbConnection(strConn); 
+ conn.Open();   
+ string strExcel = "";    
+ OleDbDataAdapter myCommand = null; 
+ DataSet ds = null; 
+ strExcel="select * from [sheet1$]"; 
+ myCommand = new OleDbDataAdapter(strExcel, strConn); 
+ ds = new DataSet(); 
+ myCommand.Fill(ds,"table1");    
+ return ds; 
+} 
+对于EXCEL中的表即sheet([sheet1$])如果不是固定的可以使用下面的方法得到 
+ string strConn = "Provider=Microsoft.Jet.OLEDB.4.0;" +"Data Source="+ Path +";"+"Extended Properties=Excel 8.0;"; 
+ OleDbConnection conn = new OleDbConnection(strConn); 
+ DataTable schemaTable = objConn.GetOleDbSchemaTable(System.Data.OleDb.OleDbSchemaGuid.Tables,null); 
+ string tableName=schemaTable.Rows[0][2].ToString().Trim();  
+
+另外：也可进行写入EXCEL文件，实例如下：
+public void DSToExcel(string Path,DataSet oldds) 
+{ 
+ //先得到汇总EXCEL的DataSet 主要目的是获得EXCEL在DataSet中的结构 
+ string strCon = " Provider = Microsoft.Jet.OLEDB.4.0 ; Data Source ="+path1+";Extended Properties=Excel 8.0" ; 
+ OleDbConnection myConn = new OleDbConnection(strCon) ; 
+ string strCom="select * from [Sheet1$]"; 
+ myConn.Open ( ) ; 
+ OleDbDataAdapter myCommand = new OleDbDataAdapter ( strCom, myConn ) ; 
+ ystem.Data.OleDb.OleDbCommandBuilder builder=new OleDbCommandBuilder(myCommand); 
+ //QuotePrefix和QuoteSuffix主要是对builder生成InsertComment命令时使用。 
+ builder.QuotePrefix="[";     //获取insert语句中保留字符（起始位置） 
+ builder.QuoteSuffix="]"; //获取insert语句中保留字符（结束位置） 
+ DataSet newds=new DataSet(); 
+ myCommand.Fill(newds ,"Table1") ; 
+ for(int i=0;i<oldds.Tables[0].Rows.Count;i++) 
+ { 
+  //在这里不能使用ImportRow方法将一行导入到news中，因为ImportRow将保留原来DataRow的所有设置(DataRowState状态不变)。
+   在使用ImportRow后newds内有值，但不能更新到Excel中因为所有导入行的DataRowState!=Added 
+  DataRow nrow=aDataSet.Tables["Table1"].NewRow(); 
+  for(int j=0;j<newds.Tables[0].Columns.Count;j++) 
+  { 
+   nrow[j]=oldds.Tables[0].Rows[i][j]; 
+  } 
+  newds.Tables["Table1"].Rows.Add(nrow); 
+ } 
+ myCommand.Update(newds,"Table1"); 
+ myConn.Close(); 
+}
+
+
+2.方法二：引用的com组件：Microsoft.Office.Interop.Excel.dll   读取EXCEL文件
+  首先是Excel.dll的获取,将Office安装目录下的Excel.exe文件Copy到DotNet的bin目录下,cmd到该目录下,运行 TlbImp EXCEL.EXE Excel.dll 得到Dll文件。 点击此处下载此文件：/Files/songliang/DLL文件.rar
+   再在项目中添加引用该dll文件.
+
+    //读取EXCEL的方法   (用范围区域读取数据)
+    private void OpenExcel(string strFileName)
+    {
+        object missing = System.Reflection.Missing.Value;
+        Application excel = new Application();//lauch excel application
+        if (excel == null)
+        {
+            Response.Write("<script>alert('Can't access excel')</script>");
+        }
+        else
+        {
+            excel.Visible = false;  excel.UserControl = true;
+            // 以只读的形式打开EXCEL文件
+            Workbook wb = excel.Application.Workbooks.Open(strFileName, missing, true, missing, missing, missing,
+             missing, missing, missing, true, missing, missing, missing, missing, missing);
+            //取得第一个工作薄
+            Worksheet ws = (Worksheet)wb.Worksheets.get_Item(1);
+
+            //取得总记录行数   (包括标题列)
+            int rowsint = ws.UsedRange.Cells.Rows.Count; //得到行数
+            //int columnsint = mySheet.UsedRange.Cells.Columns.Count;//得到列数
+
+            //取得数据范围区域  (不包括标题列)  
+            Range rng1 = ws.Cells.get_Range("B2", "B" + rowsint);   //item
+
+            Range rng2 = ws.Cells.get_Range("K2", "K" + rowsint);  //Customer
+            object[,] arryItem= (object[,])rng1.Value2;   //get range's value
+            object[,] arryCus = (object[,])rng2.Value2;   
+            //将新值赋给一个数组
+            string[,] arry = new string[rowsint-1, 2];
+            for (int i = 1; i <= rowsint-1; i++)
+            {
+                //Item_Code列
+                arry[i - 1, 0] =arryItem[i, 1].ToString();
+                //Customer_Name列
+                arry[i - 1, 1] = arryCus[i, 1].ToString();
+            }
+            Response.Write(arry[0, 0] + "  /  " + arry[0, 1] + "#" + arry[rowsint - 2, 0] + "  /  " + arry[rowsint - 2, 1]);
+        }
+         excel.Quit();  excel = null;
+        Process[] procs = Process.GetProcessesByName("excel");
+
+        foreach (Process pro in procs)
+        {
+            pro.Kill();//没有更好的方法,只有杀掉进程
+        }
+        GC.Collect();
+    }
+
+3.方法三：将EXCEL文件转化成CSV（逗号分隔）的文件，用文件流读取(等价就是读取一个txt文本文件)。
+           先引用命名空间:using System.Text;和using System.IO;
+           FileStream fs = new FileStream("d:\\Customer.csv", FileMode.Open, FileAccess.Read, FileShare.None);
+           StreamReader sr = new StreamReader(fs, System.Text.Encoding.GetEncoding(936));
+
+           string str = "";
+           string s = Console.ReadLine();
+           while (str != null)
+           {    str = sr.ReadLine();
+                string[] xu = new String[2];
+                xu = str.Split(',');
+                string ser = xu[0]; 
+                string dse = xu[1];                if (ser == s)
+                {  Console.WriteLine(dse);break;
+                }
+           }   sr.Close();
+  
+另外也可以将数据库数据导入到一个txt文件，实例如下：
+    
+        //txt文件名
+        string fn = DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + "PO014" + ".txt";
+
+        OleDbConnection con = new OleDbConnection(conStr); 
+        con.Open();
+        string sql = "select  ITEM,REQD_DATE,QTY,PUR_FLG,PO_NUM from TSD_PO014";        
+       //OleDbCommand mycom = new OleDbCommand("select * from TSD_PO014", mycon);
+        //OleDbDataReader myreader = mycom.ExecuteReader();  //也可以用Reader读取数据
+        DataSet ds = new DataSet();
+        OleDbDataAdapter oda = new OleDbDataAdapter(sql, con);
+        oda.Fill(ds, "PO014");
+        DataTable dt = ds.Tables[0];
+
+        FileStream fs = new FileStream(Server.MapPath("download/" + fn), FileMode.Create, FileAccess.ReadWrite);
+        StreamWriter strmWriter = new StreamWriter(fs);    //存入到文本文件中 
+ 
+        //把标题写入.txt文件中 
+        //for (int i = 0; i <dt.Columns.Count;i++)
+        //{
+        //    strmWriter.Write(dt.Columns[i].ColumnName + "  ");
+        //}
+        
+        foreach (DataRow dr in dt.Rows)
+        {
+            string str0, str1, str2, str3;
+            string str = "|";  //数据用"|"分隔开
+            str0 = dr[0].ToString();
+            str1 = dr[1].ToString();
+            str2 = dr[2].ToString();
+            str3 = dr[3].ToString();
+            str4 = dr[4].ToString().Trim();
+            strmWriter.Write(str0);
+            strmWriter.Write(str);
+            strmWriter.Write(str1);
+            strmWriter.Write(str);
+            strmWriter.Write(str2);
+            strmWriter.Write(str);
+            strmWriter.Write(str3);
+            strmWriter.WriteLine();  //换行
+        }
+        strmWriter.Flush();
+        strmWriter.Close();
+        if (con.State == ConnectionState.Open)
+        {
+            con.Close();
+        }
+
+
+
+ ///获取本地Excel  逐行逐列读取表格
+    #region 读取Excel表格中数据到datatable中
+    public System.Data.DataTable ExcelToDataTable(string _path)
+    {
+        System.Data.DataTable dt = new System.Data.DataTable();
+        dt.TableName = "Excel";
+        Application app = new Application();
+        object obj = System.Reflection.Missing.Value;
+        try
+        {
+            Workbook _wBook = app.Workbooks.Open(_path, obj, obj, obj, obj, obj, obj, obj, obj, obj, obj, obj, obj, obj, obj);
+            if (_wBook.Worksheets.Count > 1)
+            {
+
+
+            }
+            Worksheet _wSheet = (Worksheet)_wBook.Worksheets.get_Item("DHCST_INPurPlan_CommonExport");
+            DataRow newRow = null;
+            DataColumn newColumn = null;
+            for (int i = 4; i <= _wSheet.UsedRange.Rows.Count; i++)//要得到的数据开始行
+            {
+                newRow = dt.NewRow();
+                for (int j = 1; j <= _wSheet.UsedRange.Columns.Count; j++)
+                {
+                    if (i == 4 && j == 1)//开始读取内容前先读取标题列 表头
+                    {
+                        //表头
+                        for (int k = 1; k <= _wSheet.UsedRange.Columns.Count; k++)
+                        {
+                            string str = (_wSheet.UsedRange[3, k] as Range).Value2.ToString();//表头行
+                            newColumn = new DataColumn(str);
+                            newRow.Table.Columns.Add(newColumn);
+                        }
+                    }
+                    Range range = _wSheet.Cells[i, j] as Range;
+                    if (range != null && !"".Equals(range.Text.ToString()))
+                    {
+                        newRow[j - 1] = range.Value2;
+                    }
+                }
+                dt.Rows.Add(newRow);
+            }
+            _wSheet = null;
+            _wBook = null;
+            app.Quit();
+            Kill(app);
+            int generation = System.GC.GetGeneration(app);
+            app = null;
+            System.GC.Collect(generation);
+            return dt;
+        }
+        catch (Exception ex)
+        {
+            app.Quit();
+            Kill(app);
+            int generation = System.GC.GetGeneration(app);
+            app = null;
+            Response.Write("<script type='text/javascript'>alert('"+ex.Message+"')</script>");
+            return null;
+        }
+    }
+    #endregion
+    #region 结束进程
+    [DllImport("User32.dll", CharSet = CharSet.Auto)]
+    private static extern int GetWindowThreadProcessId(IntPtr hwnd, out int ID);
+    private static void Kill(Application excel)
+    {
+        IntPtr t = new IntPtr(excel.Hwnd);//得到句柄  得到这块内存入口
+        int k = 0;
+        GetWindowThreadProcessId(t, out k);//得到本进程唯一标识k
+        System.Diagnostics.Process p = System.Diagnostics.Process.GetProcessById(k);//得到对进程K的引用
+        p.Kill();//关闭进程k
+    }
+    #endregion

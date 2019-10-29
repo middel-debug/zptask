@@ -1,0 +1,23 @@
+
+  DECLARE @Sno INT,@Sname NVARCHAR(50),@Ssex NVARCHAR(50),@Sage int,@Sdept NVARCHAR(50)
+  DECLARE @i int
+SET @Sno=60012
+
+SET @Sname ='kk'
+
+SET @Ssex=0
+
+set @Sage=1
+set @Sdept=3
+SET @i=1 
+WHILE (@i) <1000 --10000为你要执行插入的次数
+
+BEGIN
+
+INSERT INTO [test].[dbo].[Student] ( Sno, Sname,Ssex,Sage,Sdept )  --xx为表名
+
+VALUES  ( @Sno+@i, @Sname,@Ssex+@i,@Sage,@Sdept )
+
+SET @i=@i+1
+
+END

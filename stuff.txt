@@ -1,0 +1,5 @@
+第二种，性能高：SELECT  type ,STUFF((SELECT title+',' FROM wk_CarInfo 
+ WHERE t_u.type=type order by title
+FOR XML PATH('')),1,0,'') AS title
+FROM  wk_CarInfo as t_u
+GROUP BY type

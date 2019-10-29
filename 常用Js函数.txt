@@ -1,0 +1,116 @@
+常用 JS 函数1.时间格式化界面展示的时间千变万化, 所以一个处理时间的函数，它的重要性就不言而喻了。export function formatDate (oldDate, fmt) {  
+  let date = new Date()  
+  if (typeof oldDate === 'string' || typeof oldDate === 'number') {    
+    date = new Date(+oldDate)  
+  } else {    
+    date = oldDate  
+  }  
+if (/(y+)/.test(fmt)) {    
+  fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))  }  
+  let o = {    
+  'M+': date.getMonth() + 1,    
+  'd+': date.getDate(),    
+  'h+': date.getHours(),    
+  'm+': date.getMinutes(),    
+  's+': date.getSeconds()  }  
+  function padLeftZero (str) {    
+    return ('00' + str).substr(str.length)  
+  }  
+  for (let k in o) {    
+    if (new RegExp(`(${k})`).test(fmt)) {      
+      let str = o[k] + ''      
+      fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? str : padLeftZero(str))    
+    }  
+  }  
+  return fmt
+}复制代码formatDate 接受俩个参数, oldDate 类型可以是 Date，String，Number。因为现在用时间戳传递时间真的是蛮多，也蛮方便的，而JS 是一门弱类型语言，所以我将 String 和 Number 类型的数据统一当做时间戳来处理。 fmt 是格式化的类型：yyyy-MM-dd hh:mm，其中的  yyyy | MM | dd | hh | mm 是分别匹配 年 | 月 | 日 | 时 | 分 的关键字。其中的连字符是可以随意替换的，只展示年月将其他关键字去掉即可。举几个例子：yyyy年MM月dd -> 2019年09月7日hh分mm秒 -> 16分53秒2.以“天”为单位获取响应的时间戳通常都会获取三天前的时间，12 个以内的数据，24 小时以内的数据，因此我弄了一个以天为单位获取时间戳的函数export function setDate(num) {  return Date.now() + num * 24 * 60 * 60 * 1000}复制代码时间为正可以获得未来的时间，时间为负可以获得过去时间。举个例子12 个小时之前的时间 -> setDate(-.5)24 个小时之前的时间 -> setDate(-1)三天后的时间 -> setDate(3)3.获取 URL 中的参数这个需求在三大框架的时代应用貌似不多了，不过面试中问的还是蛮多的，了解一下是好的简单实现var urlParams = new URLSearchParams('?post=1234&action=edit');
+console.log(urlParams.get('action')); // "edit"
+复制代码看了一下浏览器支持情况还是蛮好的，除了万恶的 ie复杂实现function getUrlParams(param){
+  // 有赖于浏览器环境， window.location.search 是浏览器函数
+  // 意思是:设置或返回从问号 (?) 开始的 URL（查询部分）。       
+  var query = window.location.search.substring(1);       
+  var vars = query.split("&");       
+  for (var i=0;i<vars.length;i++) {               
+    var pair = vars[i].split("=");               
+    if(pair[0] == param){return pair[1];}       
+  }       
+  return(false);
+}复制代码举个例子： http://xuyuechao.top?a=3&b=5&c=8888getUrlParams('a') -> 3getUrlParams('b') -> 5getUrlParams('c') -> 88884.手机端判断浏览器类型BrowserInfo = {      
+  isAndroid: Boolean(navigator.userAgent.match(/android/ig)),      
+  isIphone: Boolean(navigator.userAgent.match(/iphone|ipod/ig)),      
+  isIpad: Boolean(navigator.userAgent.match(/ipad/ig)),      
+  isWeixin: Boolean(navigator.userAgent.match(/MicroMessenger/ig)),      
+  isAli: Boolean(navigator.userAgent.match(/AlipayClient/ig)),
+  isPhone: Boolean(/(iPhone|iPad|iPod|iOS|Android)/i.test(navigator.userAgent))
+}复制代码目前主要支持 安卓 & 苹果 & ipad & 微信 & 支付宝 & 是否是手机端。5. 数组降维二维数组let arr = [ [1], [2], [3] ]
+arr = Array.prototype.concat.apply([], arr); // [1, 2, 3]复制代码多维数组降维let arr = [1, 2, [3], [[4]]]
+arr = arr.flat(3) // [1, 2, 3, 4]复制代码flat 有兼容性问题，手机端问题不大。浏览器端不兼容 edge。填  Infinity 可展开任意深度的数组6.深拷贝使用变量 a 拷贝对象 b，改变 a 中的值 b 中的值也会跟着改变，这叫做浅拷贝。要想让 a 独立于 b 就需要深拷贝简易处理function deepClone() {
+    return JSON.parse(JSON.stringify(obj))
+}复制代码既然是简易处理就有他的不足，上面主要是用了 JSON 的序列化和反序列化。而 JSON 是不支持函数和 undefined 的因此碰到这些情况会缺失，但是已经能够满足大部分情况了复杂处理复杂处理就需要采用递归的方式了function deepClone(obj) {  
+  function isClass(o) {    
+  if (o === null) return "Null";    
+  if (o === undefined) return "Undefined";    
+    return Object.prototype.toString.call(o).slice(8, -1);  
+  }  
+  var result;  
+  var oClass = isClass(obj);  
+  if (oClass === "Object") {    
+    result = {};  
+  } else if (oClass === "Array") {
+    result = [];  
+  } else {    
+    return obj;  
+  }  
+  for (var key in obj) {    
+    var copy = obj[key];    
+    if (isClass(copy) == "Object") {      
+      result[key] = arguments.callee(copy);//递归调用    
+    } else if (isClass(copy) == "Array") {      
+      result[key] = arguments.callee(copy);    
+    } else {      
+      result[key] = obj[key];    
+    }  
+  }  
+  return result;
+}复制代码7. 防抖 & 节流防抖和节流属于高阶技巧，业务中比较多见的场合也就是搜索内容改变提示信息。即使不加也也不一定能看出区别，但是加了新手维护代码可能会崇拜你哦。防抖function debounce(func, wait) {
+    let timeout;
+    return function () {
+        let context = this;
+        let args = arguments;
+
+        if (timeout) clearTimeout(timeout);
+        
+        timeout = setTimeout(() => {
+            func.apply(context, args)
+        }, wait);
+    }
+}复制代码节流function throttle(func, wait) {
+    let previous = 0;
+    return function() {
+        let now = Date.now();
+        let context = this;
+        let args = arguments;
+        if (now - previous > wait) {
+            func.apply(context, args);
+            previous = now;
+        }
+    }
+}复制代码8. 获取数组极值function smallest(array){                           
+  return Math.min.apply(Math, array);             
+}                                                 
+function largest(array){                            
+  return Math.max.apply(Math, array);             
+}  
+smallest([0, 1, 2.2, 3.3]); // 0
+largest([0, 1, 2.2, 3.3]); // 3.3复制代码感谢岁月无影的评论，再此补充用 es6 的实现方式let list = [1, 2, 3, 4, 5]
+Math.max(...list) // 5
+Math.min(...list) // 1
+复制代码9.判断小数是否相等function epsEqu(x,y) {  
+  return Math.abs(x - y) < Math.pow(2, -52);
+}
+// 举例
+0.1 + 0.2 === 0.3 // false
+epsEqu(0.1 + 0.2, 0.3) // true复制代码感谢?IAmFineThanks?提供的 Number.EPSILON ，Number.EPSILON === Math.pow(2, -52)因此上述方法也可以这么写function epsEqu(x,y) {  
+  return Math.abs(x - y) < Number.EPSILON;
+}
+

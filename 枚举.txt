@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace 分页
+{
+    public partial class enum_ : System.Web.UI.Page
+    {
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            int x = (int)OrderType.WaitConfirm;
+            string str = GetEnumDesc(typeof(OrderType), 1);
+            Console.WriteLine(str);
+
+
+            Order o = new Order() { Id = 1, Type = (int)OrderType.Complete };
+            string str2 = GetEnumDesc(typeof(OrderType),1);
+            Console.WriteLine(str2);
+            Console.Read();
+        }
+
+       
+        /// <summary>
+        /// 根据值得到中文备注
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public String GetEnumDesc(Type e, int? value)
+        {
+            FieldInfo[] fields = e.GetFields();
+            for (int i = 1, count = fields.Length; i < count; i++)
+            {
+                if ((int)System.Enum.Parse(e, fields[i].Name) == value)
+                {
+                    DescriptionAttribute[] EnumAttributes = (DescriptionAttribute[])fields[i].
+                GetCustomAttributes(typeof(DescriptionAttribute), false);
+                    if (EnumAttributes.Length > 0)
+                    {
+                        return EnumAttributes[0].Description;
+                    }
+                }
+            }
+            return "";
+        }
+        public class Order
+        {
+            public int Id { set; get; }
+            public int Type { set; get; }
+        }
+
+
+        public enum OrderType
+        {
+            /// <summary>
+            /// 等待用户付款
+            /// </summary>
+            [Description("等待用户付款")]
+            WaitPay = 0,
+            /// <summary>
+            /// 等待商家发货
+            /// </summary>
+            [Description("等待商家发货")]
+            WaitSend = 1,
+            /// <summary>
+            /// 等待用户确认收货
+            /// </summary>
+            [Description("等待用户确认收货")]
+            WaitConfirm = 2,
+            /// <summary>
+            /// 订单完成
+            /// </summary>
+            [Description("订单完成")]
+            Complete = 3
+        }
+        
+
+
+
+
+    }
+}
+--------------------
+
+                string Description = "";
+                FieldInfo[] fields = typeof(NoticeType).GetFields();
+                for (int i = 1, count = fields.Length; i < count; i++)
+                {
+                    if ((int)System.Enum.Parse(typeof(NoticeType), fields[i].Name) == NoticeType)
+                    {
+                        DescriptionAttribute[] EnumAttributes = (DescriptionAttribute[])fields[i].
+                    GetCustomAttributes(typeof(DescriptionAttribute), false);
+                        if (EnumAttributes.Length > 0)
+                        {
+                            Description = EnumAttributes[0].Description;
+                        }
+                    }
+                }
+                return Description;
+------------------------
+#region 枚举处理
+        /// <summary>
+        /// 获取全部的枚举项的值及描述
+        /// </summary>
+        /// <param name="obj">任意一个枚举值</param>
+        /// <returns></returns>
+        public static Dictionary<int, string> GetAllEnums<T>(T obj)
+        {
+            Type enumType = obj.GetType();
+            Dictionary<int, string> results = new Dictionary<int, string>();
+            foreach (var item in Enum.GetValues(enumType))
+            {
+                int value = Convert.ToInt32(item);
+                string name = item.ToString();
+                var enumValue = Enum.Parse(enumType, name);
+                string s = GetObjDescription(enumValue);
+                if (!string.IsNullOrEmpty(s)) name = s;
+                results.Add(value, name);
+            }
+            return results;
+        }
+        public static string GetObjDescription(object obj)
+        {
+            if (obj == null) { return string.Empty; }
+
+            string objName = obj.ToString();
+            Type t = obj.GetType();
+            FieldInfo fi = t.GetField(objName);
+            if (fi == null) return objName;
+            DescriptionAttribute[] arrDesc = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+            if (arrDesc.Length > 0)
+                return arrDesc[0].Description;
+            return objName;
+        }
+        #endregion
